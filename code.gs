@@ -1,8 +1,10 @@
 function main() {
   // set google sheet url
-  var SheetUrl  = 'https://docs.google.com/spreadsheets/d/141CCPzfh3PZcML-R-goX8r4r8N3B88Th-AsK9oYVkQA/edit?ts=5e61f6d9#gid=0';
+  //var SheetUrl  = 'https://docs.google.com/spreadsheets/d/1ehKa2V4HNTVyGN6bd9Q5VyA6gJ7v5ioQ7XowaYRNKqE/edit#gid=0';
+  var SheetUrl  = 'https://docs.google.com/spreadsheets/d/1HMXNgRlNVn8izqWKv5jumoxe1uS0kqmBY54tXrwXqh4/edit#gid=0';
   var recipient = 'moi_estrello@hotmail.com';
-  var dateRange = 'YESTERDAY';
+  //format YYYYMMDD, YYYYMMDD
+  var dateRange = 'TODAY';
   var apiUrl    = 'https://www.softwarehomework.com/api.php';
   var response  = JSON.parse(UrlFetchApp.fetch(apiUrl, {'muteHttpExceptions': true}));
   var proApiUrl = 'https://www.softwarehomework.com/product_api.php';
@@ -21,7 +23,7 @@ function main() {
     'GP - India'	          : 'Digital Download IN',
     'GP - Asia'	            : 'Digital Download A',
     'GP - Español No Mx'	  : 'Digital Download ES',
-    'GP - English World'	  : 'Digital Download EN'
+    'GP - English World'	  : 'Digital Download US'
     
   };
   
@@ -38,9 +40,9 @@ function main() {
     if(proRes[date+'_'+camp]!=undefined){
       return proRes[date+'_'+camp];
     }
-    /*else{
+    else{
       return {'product' : map_names[camp], 'mxn' : 0, 'qty' : 0};
-    }*/
+    }
   }
  
 
@@ -48,8 +50,12 @@ function main() {
   var dateNow      = new Date();
   var sheetName     = Utilities.formatDate(dateNow, AdsApp.currentAccount().getTimeZone(), "yyyyMMdd");
 
+  
   var GetSheet      = SpreadsheetApp.openByUrl(SheetUrl);
+  //Data Sheet
   var DataSheet     = GetSheet.getActiveSheet();
+  //Esto borra el excel antes de escribir.
+  DataSheet.getRange('A:Y').clearContent();
   var GetDataRange = DataSheet.getDataRange();
   var GetDataValue = GetDataRange.getValues();
   // Total Sheet
@@ -58,6 +64,8 @@ function main() {
     GetSheet.insertSheet("Ads Totals");
     var TotalSheet = GetSheet.getSheetByName("Ads Totals");
   }
+  //Esto borra el excel antes de escribir.
+  TotalSheet.getRange('A:Y').clearContent();
   var GetTotalRange = TotalSheet.getDataRange();
   var GetTotalValue = GetTotalRange.getValues();
   // Conv Report Combined
@@ -66,6 +74,8 @@ function main() {
     GetSheet.insertSheet("Conv. Report Combined Totals");
     var ConvSheet = GetSheet.getSheetByName("Conv. Report Combined Totals");
   }
+  //Esto borra el excel antes de escribir.
+  ConvSheet.getRange('A:Y').clearContent();
   var GetConvRange = ConvSheet.getDataRange();
   var GetConvValue = GetConvRange.getValues();
   // Conv Report Combined By Campaign
@@ -74,6 +84,8 @@ function main() {
     GetSheet.insertSheet("Conv. Report Combined by Campaign");
     var CampConvSheet = GetSheet.getSheetByName("Conv. Report Combined by Campaign");
   }
+  //Esto borra el excel antes de escribir.
+  CampConvSheet.getRange('A:Y').clearContent();
   var GetCampConvRange = CampConvSheet.getDataRange();
   var GetCampConvValue = GetCampConvRange.getValues();
   
@@ -98,13 +110,13 @@ function main() {
     CampConvSheet.getRange(CampConvSheet.getActiveRange().getRow(),1,1,CampConvSheet.getLastColumn()).setFontWeight("bold").setFontColor("#333").setBackgroundColor('#CCC');
   }
 
-  var campaignReport = AdsApp.report("SELECT CampaignName,Date,Cost,Conversions,Impressions,Clicks,BiddingStrategyType,MaximizeConversionValueTargetRoas FROM CAMPAIGN_PERFORMANCE_REPORT DURING "+dateRange).rows();
+  var campaignReport = AdsApp.report("SELECT CampaignName,Date,Cost,Conversions,Impressions,Clicks,BiddingStrategyType,MaximizeConversionValueTargetRoas FROM CAMPAIGN_PERFORMANCE_REPORT WHERE CampaignStatus!='REMOVED' AND CampaignStatus!='PAUSED' DURING "+dateRange).rows();
   var totalRows   = [];
   var date        = '--';
   while(campaignReport.hasNext()){
     var reports = campaignReport.next();
     date = (reports['Date'].replace(/-/g,''));
-    if(proRes[date+'_'+reports['CampaignName']]!=undefined){
+   // if(proRes[date+'_'+reports['CampaignName']]!=undefined){
       DataSheet.appendRow(
         [
           (reports['Date'].replace(/-/g,'')),
@@ -117,7 +129,7 @@ function main() {
           reports['MaximizeConversionValueTargetRoas']
         ]
       );
-    }
+   // }
     
     var getProduct = getProductQtyAndMxn(reports['Date'].replace(/-/g,''),reports['CampaignName']);
     if(getProduct){
@@ -188,7 +200,7 @@ function main() {
       //MailApp.sendEmail({to:recipient,subject: 'Campaign Report '+sheetName,htmlBody: html});
     }
     else{
-      Logger.log("Email quota exceeded for "+AdWordsApp.currentAccount().getName());
+      Logger.log("Email quota exceeded for "+AdsApp.currentAccount().getName());
     }
   }
 }
